@@ -679,7 +679,7 @@ Only variables required by the currently implemented modules need to be configur
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Rohit1752003/E-Commarce
 cd e-commerce
 ```
 
