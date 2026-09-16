@@ -104,6 +104,7 @@ const getOneProduct  = async (req , res)=>{
 }
 const updateProduct = async(req , res)=>{
     const {id} = req.params;
+   
     const product = await Product.findById(id)
     if(!product)throw new AppError(404 , "Product Does not Exist");
     const {name , price , stock , category , description , isActive}= req.body;

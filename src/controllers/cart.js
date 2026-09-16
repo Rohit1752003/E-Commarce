@@ -31,7 +31,7 @@ const addToCart = async(req , res)=>{
        return  item.product.toString() === productId
     })
     if(existingProd){
-        const newQua  = existingProd.quantity + quantity
+      const newQua  = existingProd.quantity + quantity
         if(newQua > product.stock){
              throw new AppError(
                 400,

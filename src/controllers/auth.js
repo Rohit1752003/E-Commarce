@@ -254,12 +254,51 @@ const loginUserWithPassword = async (req, res) => {
         throw new AppError(401, "Invalid Credentials");
     }
 
+     const verificationToken =
+        crypto.randomBytes(32).toString('hex');
+
+    const secureToken =
+        crypto
+            .createHash('sha256')
+            .update(verificationToken)
+            .digest('hex');
+
+    const secureExpiry =
+        new Date(Date.now() + 15 * 60 * 1000);
+        
+
+        user.emailVerificationToken =  secureToken,
+        user.emailVerificationExpires =  secureExpiry,
+         await user.save();
+       
+    
+    const verificationUrl =
+         `http://localhost:5000/api/auth/email-verification/${verificationToken}`;
+
+
+   
+
+
+   
     if (!user.emailVerified) {
-        throw new AppError(403, "Please verify your email first");
+        await sendEmail({
+        to: user.email,
+        subject: "Email Verification Link, Valid for 15 minutes only",
+        message: `Click this link to verify your email: ${verificationUrl}`,
+    })
+    throw new AppError(
+        403,
+        "Please verify your email before logging in , Email send To user Email Address" 
+    );
     }
 
-    return sendAuthResponse(user, res);
-};
+
+  
+            
+         return sendAuthResponse(user, res);
+    
+   
+}
 
 
 const loggoutUser = async (req, res) => {
