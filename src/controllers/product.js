@@ -96,6 +96,49 @@ const getAllProduct =  async (req , res)=>{
         }
     }))
 }
+
+const adminAllProduct =async(req , res)=>{
+      const {sort , search , page , limit } = req.query;
+    const filter = {}
+   const sortValue = sort || 'createdAt';
+    const sortDirection = sortValue.startsWith('-') ?-1 :1;
+    const sortField =  sortValue.startsWith('-')?sortValue.substring(1):sortValue
+    const sortOption = {
+        [sortField]:sortDirection
+    }
+    if(search){
+        filter.$or= [{
+            
+                name:{
+                    $regex : search,
+                     $options : 'i',
+                    },
+                },
+                {
+                description:{
+                    $regex :search , 
+                     $options: 'i'
+                }
+
+            
+        }]
+    }
+      const skip = (page - 1)*limit;
+      
+        const totalProduct = await Product.countDocuments(filter);
+        const totalPages =Math.ceil(totalProduct / limit);
+    const products = await Product.find(filter).sort(sortOption).skip(skip).limit(limit)
+    res.status(200).json(new ApiResponse(200  , "Product Fetched Succesfully" , {
+        products , pagination :{
+            totalProduct ,
+            page , limit , 
+            totalPages ,
+           hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+        }
+    }))
+}
+
 const getOneProduct  = async (req , res)=>{
     const {id} = req.params;
     const product = await Product.findById(id).populate('category')
@@ -276,4 +319,4 @@ const removeImgOnUpdate = async (req, res) => {
     }
 
 };
-export {createProduct  , getAllProduct , getOneProduct,deleteProduct , updateProduct  ,upadteProductImg  , removeImgOnUpdate }
+export {createProduct  , getAllProduct ,adminAllProduct, getOneProduct,deleteProduct , updateProduct  ,upadteProductImg  , removeImgOnUpdate }

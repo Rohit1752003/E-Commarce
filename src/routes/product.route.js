@@ -7,7 +7,8 @@ import {
     updateProduct,
     deleteProduct,
     upadteProductImg, 
-    removeImgOnUpdate 
+    removeImgOnUpdate  ,
+    adminAllProduct
 } from "../controllers/product.js";
 
 import   {createProductValidation , productQueryValidation , updateProductValidation} from "../middleware/product.validate.js";
@@ -36,6 +37,9 @@ product.get(
     productQueryValidation,
     asyncHandler(getAllProduct)
 );
+
+// Get All Product For Admin 
+product.get('/admin' , verifyUser , isAdmin , asyncHandler(adminAllProduct));
 
 // Get single product — Public
 product.get(
