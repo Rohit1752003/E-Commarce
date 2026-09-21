@@ -36,13 +36,57 @@ const addressSchema = z.object({
         .trim()
         .min(2, "Country is required")
 });
+
+
 const orderQuerySchema = z.object({
- search: z.string().optional(),
+    search: z.string().optional(),
+   status: z.enum([
+    "pending",
+    "confirmed",
+    "processing",
+    "shipped",
+    "delivered",
+    "cancelled"
+]).optional(),
+    paymentStatus : z.enum([
+        "pending" , "paid", "failed", "refunded"
+    ]).optional(),
+    page: z
+        .coerce
+        .number()
+        .int()
+        .positive()
+        .default(1),
 
-  page: z.coerce.number().int().positive().default(1),
+    limit: z
+        .coerce
+        .number()
+        .int()
+        .positive()
+        .default(10),
 
-  limit: z.coerce.number().int().positive().default(10),
+    sort: z.string().optional(),
+    fromDate : z.coerce.date().optional(),
+      toDate : z.coerce.date().optional()  ,
+       minAmount : z.coerce.number().min(1).optional() ,
+        maxAmount : z.coerce.number().min(1).optional(),
+});
 
-  sort: z.string().optional(),
-})
-export  {addressSchema , orderQuerySchema};
+
+const allowedStatusSchema = z.object({
+    nextStatus: z.enum([
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled"
+    ])
+});
+
+
+export {
+    addressSchema,
+    orderQuerySchema,
+    allowedStatusSchema
+};

@@ -1,6 +1,6 @@
 import AppError from "../utils/apiError.js";
 import cartSchema from "../validators/cart.validators.js";
-import {addressSchema, orderQuerySchema} from "../validators/order.validators.js";
+import {addressSchema, orderQuerySchema , allowedStatusSchema} from "../validators/order.validators.js";
 const cartValidation = (req , res , next)=>{
     const result = cartSchema.safeParse(req.body)
     if(!result.success){
@@ -25,4 +25,12 @@ const queryValidation = (req , res , next)=>{
 
     next();
 }
-export  {cartValidation , orderAddressValidation , queryValidation}
+const allowedNextStatusValidation = (req  , res , next)=>{
+    const result = allowedStatusSchema.safeParse(req.body)
+    if(!result.success){
+        throw new AppError(400 , "Validation Error")
+    }
+
+    next();
+}
+export  {cartValidation , orderAddressValidation , queryValidation , allowedNextStatusValidation}

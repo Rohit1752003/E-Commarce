@@ -8,6 +8,7 @@ import category from './routes/category.route.js'
 import product from './routes/product.route.js';
 import cart from './routes/cart.route.js';
 import order from './routes/order.route.js';
+import admin from './routes/admin.route.js';
 const app = express();
 app.use(express.json())
 app.use(cors({
@@ -27,5 +28,6 @@ app.use('/api/categories' , category)
 app.use('/api/products' , product)
 app.use('/api/cart' , cart)
 app.use('/api/order' , order)
+app.use('/api/orders' , admin)
 app.use(errorHandler)
 export default app;

@@ -31,7 +31,13 @@ const orderSchema = new mongoose.Schema({
         subtotal : {
             type : Number ,
             required : true,
-            min : 0
+            min : 0,
+            validate :{
+                validator : function(value){
+                    return value === this.price * this.quantity
+                },
+                message: "Subtotal must equal price × quantity"
+            }
 
         }
     }  
@@ -40,6 +46,15 @@ const orderSchema = new mongoose.Schema({
         type : Number, 
         required : true,
         min : 0 ,
+        validate :{
+            validator : function(value){
+                const total = this.items.reduce((sum , item)=>
+                    sum + item.subtotal , 0
+                )
+                return value === total
+            },
+            message : "Total Amout Does not match order Items"
+        }
 
     },
    shippingAddress: {

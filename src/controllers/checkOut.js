@@ -133,14 +133,24 @@ const getAllOrders = async(req , res)=>{
         hasPreviousPage: page > 1,
     }}))
 }
+
+
+
+
 const getOneOrder = async(req , res)=>{
     const {id} = req.params;
     const userId = req.userId
-    const order = await Order.findById(id);
+    const order = await Order.findOne({
+        _id : id ,
+        user : userId
+    });
      if(!order)throw new AppError(404 , "Order Does not Exist");
-     if(!order.user.equals(userId))throw new AppError(403 , "Forbidden Excess")
+    //  if(!order.user.equals(userId))throw new AppError(403 , "Forbidden Excess") can be done if we did not pass user : userId in find
     return res.status(200).json(new ApiResponse(200 , "Order Fetch Succesfully" , order));
 }
+
+
+
 const canceledOrder = async(req , res)=>{
     const userId = req.userId
     const {id} = req.params
@@ -204,4 +214,4 @@ finally{
     await session.endSession()
 }
 }
-export {checkOut  , getAllOrders , getOneOrder , canceledOrder} 
+export {checkOut  , getAllOrders  ,  getOneOrder , canceledOrder} 
