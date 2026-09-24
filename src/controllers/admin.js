@@ -4,7 +4,7 @@ import AppError from "../utils/apiError.js";
 import {canTransition , allowedStatus} from "../utils/orderStatus.js";
 import mongoose from "mongoose";
 import Product from "../models/product.model.js";
-
+import { getIO } from "../socket/socket.js";
 const getAllOrdersByAdmin = async(req , res)=>{
 
     const {search , status ,sort , page , limit , paymentStatus , fromDate , toDate  , minAmount , maxAmount} = req.query
@@ -105,6 +105,13 @@ if(paymentStatus){
     }}))
 }
 
+const getOneOrderByAdmin = async(req , res)=>{
+    const {id} = req.params;
+    const userId = req.userId;
+    const order = await Order.findById(id);
+    if(!order)throw new AppError(404  , "Order Does not Exist");
+    res.status(200).json(new ApiResponse(200 , "Order Fetched Succesfully" , {order}));
+}
 const updateStatus = async(req , res)=>{
     const {id} = req.params;
     const {nextStatus} = req.body;
@@ -117,7 +124,7 @@ const updateStatus = async(req , res)=>{
     const order = await Order.findById(id).session(session);
     if(!order)throw new AppError(404 , "Order does not Exist");
 
-
+        const userId = order.user
    const currentStatus = order.orderStatus;
    if(!canTransition(currentStatus  , nextStatus))throw new AppError(400 , `Order Cannot Jump Directly to ${nextStatus} , Available Jumps Are : ${allowedStatus[currentStatus]}`);
      
@@ -165,6 +172,25 @@ const updateStatus = async(req , res)=>{
 
 
     await session.commitTransaction();
+    try{
+
+        const io = getIO()
+        console.log("Order user:", userId);
+        console.log("Emitting to:", `user:${userId}`);
+        io.to("admins").emit("admin",{
+            orderId: updatedOrder._id,
+            userId: updatedOrder.user,
+            orderStatus: updatedOrder.orderStatus
+        })
+        io.to(`user:${userId}`).emit("notification" , {
+            message:`Your Order Status updated to ${nextStatus} , Please Check Status on App`,
+             orderId: updatedOrder._id,
+             
+        })
+    }catch(err){
+     
+        console.log("Status Updated But Socket msg send failed")
+    }
    return res.status(200).json(new ApiResponse(200 , "Order Status Updated Succesfulyy" , {order : updatedOrder}))
   
 
@@ -177,4 +203,4 @@ const updateStatus = async(req , res)=>{
     }
   
 }
-export {getAllOrdersByAdmin , updateStatus}
+export {getAllOrdersByAdmin , updateStatus , getOneOrderByAdmin}

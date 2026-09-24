@@ -67,7 +67,8 @@ const getAllItemInCart = async(req , res)=>{
     if(!cart){
         return res.status(200).json(new ApiResponse(200 , "Cart is Empty / Cart is not Created"))
     }
-    return res.status(200).json(new ApiResponse(200 , "All items Fetched SuccesFully" , cart))
+    if(cart.items.length === 0 )return res.status(200).json(new ApiResponse(200 , "Cart is empty , Try To add item in Cart"))
+    return res.status(200).json(new ApiResponse(200 , " Allitems Fetched SuccesFully" , cart))
 
 }
 const updateProductQuantity = async (req, res) => {

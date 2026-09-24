@@ -15,7 +15,7 @@ import {
 } from "../middleware/category.validation.js";
 
 import { verifyUser } from "../middleware/auth.middleware.js";
-import isAdmin from "../middleware/isAdmin.js";
+import {isAdmin} from "../middleware/isAdmin.js";
 
 import asyncHandler from "../utils/asyncHandler.js";
 

@@ -2,7 +2,7 @@ import Product from "../models/product.model.js";
 import Category from "../models/category.model.js";
 import AppError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponce.js";
-import isAdmin from "../middleware/isAdmin.js";
+import {isAdmin} from "../middleware/isAdmin.js";
 import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { response } from "express";
 
@@ -57,7 +57,7 @@ const createProduct = async (req , res)=>{
 }
 const getAllProduct =  async (req , res)=>{
     const {sort , search , page , limit } = req.query;
-    const filter = {isActive : true}
+    const filter = {isActive : true , stock :{ $gt:0 }}
    const sortValue = sort || 'createdAt';
     const sortDirection = sortValue.startsWith('-') ?-1 :1;
     const sortField =  sortValue.startsWith('-')?sortValue.substring(1):sortValue

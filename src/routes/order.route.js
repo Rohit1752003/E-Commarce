@@ -4,7 +4,7 @@ import { orderAddressValidation, queryValidation } from "../middleware/cart.vali
 import { Router } from "express";
 import asyncHandler from "../utils/asyncHandler.js";
 import {checkOut  , getAllOrders , getOneOrder , canceledOrder  }  from "../controllers/checkOut.js";
-import isAdmin from "../middleware/isAdmin.js";
+import {isAdmin} from "../middleware/isAdmin.js";
 
 const order = Router()
 

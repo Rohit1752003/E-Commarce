@@ -14,7 +14,7 @@ const addressSchema = z.object({
     addressLine: z
         .string()
         .trim()
-        .min(5, "Address must be at least 5 characters"),
+        .min(2, "Address must be at least 5 characters"),
 
     city: z
         .string()

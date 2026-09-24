@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken'
 import AppError from '../utils/apiError.js';
 
 const verifyUser = async (req, res, next) => {

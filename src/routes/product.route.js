@@ -14,7 +14,7 @@ import {
 import   {createProductValidation , productQueryValidation , updateProductValidation} from "../middleware/product.validate.js";
 
 import { verifyUser } from "../middleware/auth.middleware.js";
-import isAdmin from "../middleware/isAdmin.js";
+import {isAdmin} from "../middleware/isAdmin.js";
 
 import asyncHandler from "../utils/asyncHandler.js";
 import { upload } from "../middleware/upload.js";

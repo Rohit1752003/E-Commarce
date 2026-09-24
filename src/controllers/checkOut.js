@@ -5,6 +5,7 @@ import AppError from "../utils/apiError.js";
 import Cart from "../models/cart.model.js";
 import mongoose, { mongo } from "mongoose";
 import product from "../routes/product.route.js";
+import { getIO } from "../socket/socket.js";
 const checkOut  = async(req  , res)=>{
     const {shippingAddress} = req.body
     const userId = req.userId
@@ -77,6 +78,30 @@ const checkOut  = async(req  , res)=>{
         cart.items = []
         await cart.save({session})
          await session.commitTransaction();
+
+      try {
+    const io = getIO();
+    const order = createOrder[0];
+
+    io.to(`user:${userId}`).emit("notification", {
+        orderId: order._id,
+        totalAmount: order.totalAmount,
+        orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus
+    });
+
+    io.to("admins").emit("admin", {
+        orderId: order._id,
+        userId,
+        totalAmount: order.totalAmount
+    });
+
+} catch (socketError) {
+    console.error(
+        "Order created but socket notification failed:",
+        socketError
+    );
+}
         return res.status(201).json(new ApiResponse(201 , "Order Created Succesfully" , createOrder))
     
 }
@@ -204,6 +229,29 @@ const canceledOrder = async(req , res)=>{
           order.orderStatus = "cancelled"
           await order.save({session});
             await session.commitTransaction();
+              try {
+    const io = getIO();
+    
+
+    io.to(`user:${userId}`).emit("notification", {
+        message : `Order Cancelled Succesfully`,
+        orderId: order._id,
+       
+    });
+
+    io.to("admins").emit("admin", {
+         message : `Order Cancelled Succesfully`,
+        orderId: order._id,
+        userId,
+       
+    });
+
+} catch (socketError) {
+    console.error(
+        "Order cancelled but socket notification failed:",
+        socketError
+    );
+}
             return res.status(200).json(new ApiResponse(200 , "Order Canceled Succesfully"))
         
 }catch(err){

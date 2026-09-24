@@ -12,6 +12,10 @@ const cartValidation = (req , res , next)=>{
 const orderAddressValidation = (req, res , next)=>{
   const result = addressSchema.safeParse(req.body.shippingAddress);
     if(!result.success){
+     
+        console.log("VALIDATION ERROR:");
+        console.log(result.error.issues);
+
         throw new AppError(400 , "Validation Error")
     }
 
