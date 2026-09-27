@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 
 console.log("Starting socket client...");
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTlmZGZlOWYzNzU0NGYyNDRmMTg2ZTYiLCJpYXQiOjE3OTAyNDI4ODYsImV4cCI6MTc5MDMyOTI4Nn0.VbiXhTXXuAsY0mUJhendfkbC1N4MrhyiDcFTkXirEnk"
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTlmZGZlOWYzNzU0NGYyNDRmMTg2ZTYiLCJpYXQiOjE3OTAyNTE4MDQsImV4cCI6MTc5MDMzODIwNH0.54n9zStXAXJ7sbO7tNhHtCvik_EXOKkAyUgYvt4Rqlk"
 
 const socket = io("http://localhost:5000", {
     auth: {

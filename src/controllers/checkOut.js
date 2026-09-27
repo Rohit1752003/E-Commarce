@@ -7,7 +7,7 @@ import mongoose, { mongo } from "mongoose";
 import product from "../routes/product.route.js";
 import { getIO } from "../socket/socket.js";
 const checkOut  = async(req  , res)=>{
-    const {shippingAddress} = req.body
+    const {shippingAddress , paymentType} = req.body
     const userId = req.userId
     const cart = await Cart.findOne({user : userId})
     if(!cart || cart.items.length === 0)return  res.status(200).json(new ApiResponse(200 , "Cart is empty / try to Add items in Cart"));
@@ -64,16 +64,21 @@ const checkOut  = async(req  , res)=>{
     for(const total of orderSnapshot){
         totalAmount += total.subtotal
     }
-     const createOrder = await Order.create( [{
+
+         const createOrder = await Order.create( [{
         user: userId,
         items: orderSnapshot,
         totalAmount,
         shippingAddress,
+          paymentMethod : paymentType,
         orderStatus: "pending",
         paymentStatus: "pending"
     }],
     { session }
 )
+    
+
+    
             
         cart.items = []
         await cart.save({session})

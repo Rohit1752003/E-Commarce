@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-const addressSchema = z.object({
-    fullName: z
+const checkOutSchema = z.object({
+    shippingAddress:z.object({
+         fullName: z
         .string()
         .trim()
         .min(3, "Full name must be at least 3 characters"),
@@ -14,7 +15,7 @@ const addressSchema = z.object({
     addressLine: z
         .string()
         .trim()
-        .min(2, "Address must be at least 5 characters"),
+        .min(5, "Address must be at least 5 characters"),
 
     city: z
         .string()
@@ -35,6 +36,8 @@ const addressSchema = z.object({
         .string()
         .trim()
         .min(2, "Country is required")
+    }),
+   paymentType : z.enum(["online" , "cod"])
 });
 
 
@@ -86,7 +89,7 @@ const allowedStatusSchema = z.object({
 
 
 export {
-    addressSchema,
+    checkOutSchema,
     orderQuerySchema,
     allowedStatusSchema
 };

@@ -87,6 +87,12 @@ const orderSchema = new mongoose.Schema({
         required : true,
     } ,
 },
+    paymentMethod :{
+         type : String , 
+        enum : ["online" , "cod"],
+        required : true , 
+
+    },
     orderStatus :{
         type : String ,
         enum : ["pending", "confirmed", "processing", "shipped",  "delivered" ,"cancelled"],
@@ -99,5 +105,8 @@ const orderSchema = new mongoose.Schema({
     }
 
 }, {timestamps : true})
+orderSchema.index({ orderStatus: 1 });
+orderSchema.index({ paymentStatus: 1 });
+orderSchema.index({ paymentMethod: 1 });
 const Order = mongoose.model("Order" , orderSchema)
 export default Order

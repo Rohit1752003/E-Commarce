@@ -1,6 +1,6 @@
 import AppError from "../utils/apiError.js";
 import cartSchema from "../validators/cart.validators.js";
-import {addressSchema, orderQuerySchema , allowedStatusSchema} from "../validators/order.validators.js";
+import {checkOutSchema, orderQuerySchema , allowedStatusSchema} from "../validators/order.validators.js";
 const cartValidation = (req , res , next)=>{
     const result = cartSchema.safeParse(req.body)
     if(!result.success){
@@ -10,7 +10,7 @@ const cartValidation = (req , res , next)=>{
     next();
 }
 const orderAddressValidation = (req, res , next)=>{
-  const result = addressSchema.safeParse(req.body.shippingAddress);
+  const result = checkOutSchema.safeParse(req.body);
     if(!result.success){
      
         console.log("VALIDATION ERROR:");

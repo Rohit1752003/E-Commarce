@@ -5,6 +5,8 @@ import ApiResponse from "../utils/apiResponce.js";
 import {isAdmin} from "../middleware/isAdmin.js";
 import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { response } from "express";
+import { getIO } from "../socket/socket.js";
+import cart from "../routes/cart.route.js";
 
 const createProduct = async (req , res)=>{
 
@@ -44,6 +46,10 @@ const createProduct = async (req , res)=>{
             }));
             const create = await Product.create({
             name , description , price , stock , category , images
+        })
+        const io = getIO();
+        io.to("admins").emit('admin' , {
+            message : `New Product Added to System ${pro.name} and its Category is ${create.category}`
         })
         res.status(201).json(new ApiResponse(201 ,"Product Created Succesfully" , create ))
             }catch(err){
