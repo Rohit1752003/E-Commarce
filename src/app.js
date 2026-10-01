@@ -9,7 +9,14 @@ import product from './routes/product.route.js';
 import cart from './routes/cart.route.js';
 import order from './routes/order.route.js';
 import admin from './routes/admin.route.js';
+import payment from './routes/payment.route.js';
+import webhook from './routes/webhook.route.js';
 const app = express();
+app.use(
+  "/api/webhooks/razorpay",
+  express.raw({ type: "application/json" })
+);
+
 app.use(express.json())
 app.use(cors({
     origin : 'http://localhost:5173'
@@ -29,5 +36,7 @@ app.use('/api/products' , product)
 app.use('/api/cart' , cart)
 app.use('/api/order' , order)
 app.use('/api/orders' , admin)
+app.use('/api/payment' , payment);
+app.use('/api/webhooks' , webhook)
 app.use(errorHandler)
 export default app;

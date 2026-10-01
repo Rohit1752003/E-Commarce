@@ -4,58 +4,237 @@ import AppError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponce.js";
 import User from "../models/user.model.js";
 import razorpay from "../config/razorPay.js";
-const createPayment = async(req , res)=>{
-        const {orderId} = req.params;
+import crypto from 'crypto'
+import mongoose from "mongoose";
 
-        const userId = req.userId;
-        const order  = await Order.findOne({
-            _id : orderId,
-            user : userId
-        });
-        if(!order)throw new ApiResponse(404 , "Order Does not Exist");
-   
+const createPayment = async (req, res) => {
 
-        if(order.orderStatus === "cancelled")throw new AppError(400 , "Order is cancelled");
-        if (order.paymentStatus === "paid" ) {
+    const { orderId } = req.params;
+    const userId = req.userId;
+
+    // 1. Find user's order
+    const order = await Order.findOne({
+        _id: orderId,
+        user: userId
+    });
+
+    if (!order) {
+        throw new AppError(404, "Order Does not Exist");
+    }
+
+    // 2. Validate order
+    if (order.orderStatus === "cancelled") {
+        throw new AppError(400, "Order is cancelled");
+    }
+
+    if (order.paymentStatus === "paid") {
         throw new AppError(400, "Order is already paid");
     }
-    if(order.paymentMethod === "cod")throw new AppError(400 , "Payment will done at a time of delivery")
 
+    if (order.paymentMethod === "cod") {
+        throw new AppError(
+            400,
+            "Payment will be done at the time of delivery"
+        );
+    }
 
-      
-        const existingPayment = await Payment.findOne({order :orderId});
-        if(existingPayment){
-            return res.status(200).json(new ApiResponse(200 , "Payment Already Exist"))
+    // 3. Find existing Payment
+    const existingPayment = await Payment.findOne({
+        order: orderId,
+        user: userId
+    });
+
+    // =====================================================
+    // EXISTING PAYMENT
+    // =====================================================
+
+    if (existingPayment) {
+
+        // Already paid
+        if (existingPayment.status === "paid") {
+            throw new AppError(
+                400,
+                "Payment is already completed"
+            );
         }
+
+        // Existing payment is still valid
+        if (
+            existingPayment.status === "pending" &&
+            Date.now() < existingPayment.expiresAt.getTime()
+        ) {
+
+            return res.status(200).json(
+                new ApiResponse(
+                    200,
+                    "Existing payment can be resumed",
+                    {
+                        payment: existingPayment,
+
+                        razorpayOrder: {
+                            id: existingPayment.providerOrderId,
+                            amount: existingPayment.amount * 100,
+                            currency: existingPayment.currency
+                        },
+
+                        keyId: process.env.RAZORPAY_KEY_ID
+                    }
+                )
+            );
+        }
+
+        // =================================================
+        // EXISTING PAYMENT EXPIRED
+        // =================================================
+
         const razorpayOrder = await razorpay.orders.create({
-            amount : order.totalAmount * 100,
-            currency: "INR",
-             receipt: order._id.toString()
-        })
-        const payment = await Payment.create({
-                order : orderId , 
-                user : userId ,
-                amount : order.totalAmount,
-                currency : 'INR',    
-                  provider: "razorpay",
-                providerOrderId: razorpayOrder.id,
-                status : "pending",
-        })
-          return res.status(201).json(
+
+            // Payment amount is stored in rupees
+            // Razorpay expects paise
+            amount: existingPayment.amount * 100,
+
+            currency: existingPayment.currency,
+
+            receipt: order._id.toString()
+        });
+
+        // Reuse SAME Payment document
+        existingPayment.providerOrderId =
+            razorpayOrder.id;
+
+        existingPayment.status = "pending";
+
+        existingPayment.expiresAt =
+            new Date(Date.now() + 15 * 60 * 1000);
+
+        existingPayment.providerPaymentId = null;
+
+        await existingPayment.save();
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                "New payment attempt created",
+                {
+                    payment: existingPayment,
+
+                    razorpayOrder: {
+                        id: razorpayOrder.id,
+                        amount: razorpayOrder.amount,
+                        currency: razorpayOrder.currency
+                    },
+
+                    keyId: process.env.RAZORPAY_KEY_ID
+                }
+            )
+        );
+    }
+
+    // =====================================================
+    // NO PAYMENT EXISTS → FIRST PAYMENT ATTEMPT
+    // =====================================================
+
+    const razorpayOrder = await razorpay.orders.create({
+
+        amount: order.totalAmount * 100,
+
+        currency: "INR",
+
+        receipt: order._id.toString()
+    });
+
+    const expiresAt =
+        new Date(Date.now() + 15 * 60 * 1000);
+
+    const payment = await Payment.create({
+
+        order: orderId,
+
+        user: userId,
+
+        amount: order.totalAmount,
+
+        currency: "INR",
+
+        provider: "razorpay",
+
+        providerOrderId: razorpayOrder.id,
+
+        status: "pending",
+
+        expiresAt
+    });
+
+    return res.status(201).json(
         new ApiResponse(
             201,
-            "Payment created successfully",{
-                    payment,
-             razorpayOrder: {
+            "Payment created successfully",
+            {
+                payment,
+
+                razorpayOrder: {
                     id: razorpayOrder.id,
                     amount: razorpayOrder.amount,
                     currency: razorpayOrder.currency
                 },
+
                 keyId: process.env.RAZORPAY_KEY_ID
             }
-            
         )
     );
+};
+
+
+const verifyPayment = async(req , res)=>{
+        const {orderId} = req.params;
+        const userId = req.userId;
+
+        const {razorpay_payment_id,
+        razorpay_order_id,
+        razorpay_signature } = req.body;
+
+            const session = await mongoose.startSession();
+
+            try{
+                 session.startTransaction();
+
+                const order = await Order.findOne({
+            _id: orderId,
+            user:userId 
+           
+        }).session(session);
+        if(!order)throw new AppError(404 , "Order DOes not Exist");
+
+        const payment = await Payment.findOne({
+            user : userId ,
+            order :  orderId
+        }).session(session);
+        if(!payment)throw new AppError(404 ,"Payment does not exist");
+         if(payment.status === "paid"){
+      
+            return res.status(200).json(new ApiResponce(200 , "Payment is Already Verified"));
+        }
+        if(payment.providerOrderId !== razorpay_order_id)throw new AppError(400 , "Order id does not matched");
+        const generateSignature = crypto.createHmac('sha256' , process.env.RAZORPAY_KEY_SECRET).update(`${razorpay_order_id}|${ razorpay_payment_id}`).digest('hex');
+
+        if(razorpay_signature !== generateSignature)throw new AppError(400 , "Payment Verification Failed");
+
+       
+        payment.status = "paid" , 
+        payment.providerPaymentId = razorpay_payment_id
+        payment.providerOrderId = razorpay_order_id
+        payment.expiresAt = undefined
+        order.paymentStatus = "paid"
+        await payment.save({session});
+        await order.save({session});
+       await session.commitTransaction();
+        return res.status(200).json(new ApiResponce(200 , "Payment is Verified and Amount Paid Succesfully"  ,{payment , order}));
+                
+            }catch(err){
+                await session.abortTransaction();
+                throw err;
+            }finally{
+                await session.endSession()
+            }
 }
-
-
+export {createPayment , verifyPayment};

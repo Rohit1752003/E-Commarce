@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { date } from "zod";
 
 const paymentSchema = new mongoose.Schema(
     {
@@ -51,7 +52,10 @@ const paymentSchema = new mongoose.Schema(
         default: null,
         unique: true,
         sparse: true
-},
+},      
+    expiresAt : {
+        type : date,
+    }
     },
     {
         timestamps: true
