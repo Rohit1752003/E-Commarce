@@ -33,6 +33,7 @@ const checkOut  = async(req  , res)=>{
     try{
         session.startTransaction();
 
+      const deadline = paymentType === "online" ? new Date(Date.now() + 60 * 60 * 1000) : null;
          for(const item of allItems){
              const product = await Product.findOneAndUpdate( {
                 _id : item.product ,
@@ -72,7 +73,8 @@ const checkOut  = async(req  , res)=>{
         shippingAddress,
           paymentMethod : paymentType,
         orderStatus: "pending",
-        paymentStatus: "pending"
+        paymentStatus: "pending",
+        paymentDeadline : deadline
     }],
     { session }
 )

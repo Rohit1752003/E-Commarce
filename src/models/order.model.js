@@ -1,11 +1,18 @@
 import mongoose from "mongoose";
 
+
 const orderSchema = new mongoose.Schema({
     user :{
         type : mongoose.Schema.Types.ObjectId,
         ref :  "User",
         required : true,
     },
+     paymentDeadline : {
+            type : Date,
+            required : true ,
+
+           
+        },
     items :[
         {
              product :{
@@ -39,7 +46,8 @@ const orderSchema = new mongoose.Schema({
                 message: "Subtotal must equal price × quantity"
             }
 
-        }
+        },
+       
     }  
     ],
     totalAmount : {
