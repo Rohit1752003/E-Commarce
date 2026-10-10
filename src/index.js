@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 import {socketAuth} from './socket/socketAuth.js'
 import { initSocket } from './socket/socket.js';
 import User from './models/user.model.js';
+import startWorker from './workers/orderExpiration.worker.js';
 dotenv.config({
     "path": ".env"
 });
@@ -76,5 +77,6 @@ const connectServer = async()=>{
         console.log(err);
     }
 }
+startWorker();
 connectServer();
 

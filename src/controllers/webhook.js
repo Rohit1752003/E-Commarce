@@ -45,7 +45,7 @@
 
        
 
-    const session = await mongoose.startSession();
+
 
     if (webhookData.event !== "payment.captured") {
     return res.status(200).json(
@@ -54,11 +54,23 @@
             "Webhook event received"
         )
     );
-}
+}   
+    const session = await mongoose.startSession();
+     session.startTransaction();
     try{
-        session.startTransaction();
+       
+        const existingPayment = await Payment.findOne({providerOrderId : razorpayOrderId }).session(session);
+
+        if(existingPayment && existingPayment.status === "paid" ){ return res.status(200).json(new ApiResponse(200 , "Payment is Already Verified"))}   
+
+        if(existingPayment && existingPayment.status === "failed" ){ throw new AppError(400 , "Payment is Already Failed")}
+        if(!existingPayment)throw new AppError(404 , "Payment Does not Exist");
       
-            const updatePayment = await Payment.findOneAndUpdate({providerOrderId : razorpayOrderId ,status : "pending"} , 
+            const updatePayment = await Payment.findOneAndUpdate(
+                {
+                    providerOrderId : razorpayOrderId ,
+                    status : "pending"
+                } , 
                 {
                     $set :{
                         status : "paid",
@@ -75,7 +87,13 @@
     throw new AppError(400 , "Request is already processed once")
 }
 
-const order = await Order.findOneAndUpdate({_id :  updatePayment.order}, 
+const order = await Order.findOneAndUpdate(
+    {
+        _id :  updatePayment.order,
+        paymentStatus : "pending",
+        orderStatus : "pending",
+        paymentMethod : "online"
+    }, 
     {
         $set :{
             paymentStatus : "paid"

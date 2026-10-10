@@ -65,14 +65,14 @@ const checkOut  = async(req  , res)=>{
     for(const total of orderSnapshot){
         totalAmount += total.subtotal
     }
-
+        const status = paymentType === "cod"?"confirmed":"pending"
          const createOrder = await Order.create( [{
         user: userId,
         items: orderSnapshot,
         totalAmount,
         shippingAddress,
           paymentMethod : paymentType,
-        orderStatus: "pending",
+        orderStatus: status,
         paymentStatus: "pending",
         paymentDeadline : deadline
     }],

@@ -11,6 +11,7 @@ import order from './routes/order.route.js';
 import admin from './routes/admin.route.js';
 import payment from './routes/payment.route.js';
 import webhook from './routes/webhook.route.js';
+import expire from './routes/expire.route.js';
 const app = express();
 app.use(
   "/api/webhooks/razorpay",
@@ -38,5 +39,6 @@ app.use('/api/order' , order)
 app.use('/api/orders' , admin)
 app.use('/api/payment' , payment);
 app.use('/api/webhooks' , webhook)
+app.use('/api/expire' , expire)
 app.use(errorHandler)
 export default app;

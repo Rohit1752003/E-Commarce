@@ -10,10 +10,21 @@ import Product from "../models/product.model.js";
 
 
 const createPayment = async (req, res) => {
+//     console.log(
+//   "RAZORPAY_KEY_ID:",
+//   process.env.RAZORPAY_KEY_ID
+// );
 
+// console.log(
+//   "RAZORPAY_KEY_SECRET:",
+//   process.env.RAZORPAY_KEY_SECRET
+//     ? "EXISTS"
+//     : "MISSING"
+// );
     const { orderId } = req.params;
     const userId = req.userId;
-
+//     console.log("orderId:", orderId);
+// console.log("userId:", userId);
     // 1. Find user's order
     const order = await Order.findOne({
         _id: orderId,
@@ -41,7 +52,7 @@ const createPayment = async (req, res) => {
         );
     }
    
-     if(order.paymentDeadline &&  order.paymentDeadline.getTime() < Date.now().getTime()){
+     if(order.paymentDeadline &&  order.paymentDeadline.getTime() < Date.now()){
        
         throw new AppError(400 , "Payment Deadline is Over / Order is Cancelled");
      }
@@ -95,7 +106,7 @@ const createPayment = async (req, res) => {
          // =================================================
           if(existingPayment.attemptsUsed >= 5)throw new AppError(400 , "Max Attempt Reached / Try Creating Order Again ")
          
-         existingPayment.attemptsUsed +=1;
+      
         
          const razorpayOrder = await razorpay.orders.create({
 
@@ -107,15 +118,18 @@ const createPayment = async (req, res) => {
 
              receipt: order._id.toString()
          });
-
+            existingPayment.attemptsUsed +=1;
          // Reuse SAME Payment document
          existingPayment.providerOrderId =
              razorpayOrder.id;
 
          existingPayment.status = "pending";
 
-         existingPayment.expiresAt =
-             new Date(Date.now() + 15 * 60 * 1000);
+         existingPayment.expiresAt = new Date(
+            Math.min(
+             new Date(Date.now() + 15 * 60 * 1000).getTime(),
+             order.paymentDeadline.getTime()
+         ));
 
          existingPayment.providerPaymentId = null;
 
@@ -155,8 +169,8 @@ const createPayment = async (req, res) => {
         receipt: order._id.toString()
     });
 
-    const expiresAt =
-        new Date(Date.now() + 15 * 60 * 1000);
+   
+       
 
         const attempt  = 1;
     const payment = await Payment.create({
@@ -175,7 +189,12 @@ const createPayment = async (req, res) => {
 
         status: "pending",
 
-        expiresAt,
+        expiresAt: new Date(
+            Math.min(
+             new Date(Date.now() + 15 * 60 * 1000).getTime(),
+             order.paymentDeadline.getTime()
+         )),
+
         attemptsUsed : attempt
     });
 

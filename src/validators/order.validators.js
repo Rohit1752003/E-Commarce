@@ -49,7 +49,8 @@ const orderQuerySchema = z.object({
     "processing",
     "shipped",
     "delivered",
-    "cancelled"
+    "cancelled",
+    "expired"
 ]).optional(),
     paymentStatus : z.enum([
         "pending" , "paid", "failed", "refunded"
