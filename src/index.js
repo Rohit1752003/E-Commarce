@@ -68,7 +68,7 @@ const connectServer = async()=>{
         console.log("APP LOADED");
        server.listen( PORT ,()=>{
         console.log(`Server is running on : ${PORT}`)
-       
+       startWorker();
 
        })
 
@@ -77,6 +77,6 @@ const connectServer = async()=>{
         console.log(err);
     }
 }
-startWorker();
+
 connectServer();
 

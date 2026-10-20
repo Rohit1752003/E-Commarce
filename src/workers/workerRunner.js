@@ -10,7 +10,7 @@ const startWorker = () => {
         catch(err){
             console.error("Error in worker:", err);
         }  
-        setTimeout(run, 60000);
+        setTimeout(run, 120000);
     };
     run();
     

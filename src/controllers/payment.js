@@ -104,7 +104,7 @@ const createPayment = async (req, res) => {
      // =================================================
         // EXISTING PAYMENT EXPIRED
          // =================================================
-          if(existingPayment.attemptsUsed >= 5)throw new AppError(400 , "Max Attempt Reached / Try Creating Order Again ")
+          if(existingPayment.attemptsUsed >= 4)throw new AppError(400 , "Max Attempt Reached / Try Creating Order Again ")
          
       
         

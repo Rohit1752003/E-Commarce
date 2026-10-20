@@ -42,16 +42,55 @@ const paymentSchema = new mongoose.Schema(
                 "pending",
                 "paid",
                 "failed",
-                "refunded"
+                "refunded",
+               
             ],
             default: "pending"
         },
-        providerOrderId: {
+        recoveryStatus: {
+            type: String,
+            enum: [
+                "not_required",
+                "pending",
+                "processing",
+                "fulfilled",
+                "refund_pending",
+                "refunded",
+                "failed"
+            ],
+            default: "not_required"
+            },
+            
+        refundStatus: {
         type: String,
-        default: null,
-        unique: true,
-        sparse: true
+        enum: [
+            "not_required",
+            "pending",
+            "processing",
+            "processed",
+            "failed"
+        ],
+        default: "not_required"
+        },
+
+
+        providerRefundId: {
+            type: String,
+            default: null
+        },
+
+        refundIdempotencyKey: {
+            type: String,
+            default: null
+        },
+        providerOrderId: {
+            type: String,
+            default: null,
+            unique: true,
+            sparse: true
 },      
+// payment.model.js
+refundAttempt: { type: Number, default: 0 },
     expiresAt : {
         type : Date,
     },

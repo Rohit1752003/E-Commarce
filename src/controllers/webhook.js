@@ -4,34 +4,12 @@
     import Payment from "../models/payment.model.js";
     import ApiResponse from "../utils/apiResponce.js";
     import Order from '../models/order.model.js'
+    import verifySignature  from '../services/verify.webhook.service.js'
     const webHook = async (req, res) => {
-
-    const signature =
-        req.headers["x-razorpay-signature"];
-
-    if (!signature) {
-        throw new AppError(
-        400,
-        "Razorpay webhook signature missing"
-        );
-    }
-
+    
+   await verifySignature(req)
+   
     const data = req.body;
-
-    const generateSignature = crypto
-        .createHmac(
-        "sha256",
-        process.env.RAZORPAY_WEBHOOK_SECRET
-        )
-        .update(data)
-        .digest("hex");
-
-    if (generateSignature !== signature) {
-        throw new AppError(
-        400,
-        "Payment Verification failed"
-        );
-    }
 
     const webhookData =
         JSON.parse(data.toString());
@@ -41,10 +19,6 @@
 
     const razorpayOrderId =
         webhookData.payload.payment.entity.order_id;
-
-
-       
-
 
 
     if (webhookData.event !== "payment.captured") {
@@ -61,7 +35,10 @@
        
         const existingPayment = await Payment.findOne({providerOrderId : razorpayOrderId }).session(session);
 
-        if(existingPayment && existingPayment.status === "paid" ){ return res.status(200).json(new ApiResponse(200 , "Payment is Already Verified"))}   
+        if(existingPayment && existingPayment.status === "paid" ){
+            await session.abortTransaction()
+             return res.status(200).json(new ApiResponse(200 , "Payment is Already Verified"))
+            }   
 
         if(existingPayment && existingPayment.status === "failed" ){ throw new AppError(400 , "Payment is Already Failed")}
         if(!existingPayment)throw new AppError(404 , "Payment Does not Exist");
