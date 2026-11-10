@@ -1,4 +1,7 @@
-import dotenv from 'dotenv';
+import "dotenv/config";
+// dotenv.config({
+//     "path": ".env"
+// });
 import app from './app.js'; 
 import connectDb from './config/db.js'
 import http from 'http'
@@ -7,9 +10,7 @@ import {socketAuth} from './socket/socketAuth.js'
 import { initSocket } from './socket/socket.js';
 import User from './models/user.model.js';
 import startWorker from './workers/orderExpiration.worker.js';
-dotenv.config({
-    "path": ".env"
-});
+
 const server = http.createServer(app);
 
 const io = new Server(server, {

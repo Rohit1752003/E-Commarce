@@ -4,6 +4,6 @@ import { verifyUser } from "../middleware/auth.middleware.js";
 
 import { Router } from "express";
 const payment = Router();
-payment.post('/:orderId' , verifyUser , asyncHandler(createPayment));
-payment.post('/verify' , verifyUser , asyncHandler(verifyPayment));
+payment.post('/verify', verifyUser, asyncHandler(verifyPayment));
+payment.post('/:orderId', verifyUser, asyncHandler(createPayment));
 export default payment

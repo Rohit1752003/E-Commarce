@@ -7,25 +7,13 @@ import razorpay from "../config/razorPay.js";
 import crypto from 'crypto'
 import mongoose from "mongoose";
 import Product from "../models/product.model.js";
-
+import PaymentAttempt from "../models/payment_Attempt.model.js";
 
 const createPayment = async (req, res) => {
-//     console.log(
-//   "RAZORPAY_KEY_ID:",
-//   process.env.RAZORPAY_KEY_ID
-// );
 
-// console.log(
-//   "RAZORPAY_KEY_SECRET:",
-//   process.env.RAZORPAY_KEY_SECRET
-//     ? "EXISTS"
-//     : "MISSING"
-// );
-    const { orderId } = req.params;
+    const { orderId } = req.body;
     const userId = req.userId;
-//     console.log("orderId:", orderId);
-// console.log("userId:", userId);
-    // 1. Find user's order
+
     const order = await Order.findOne({
         _id: orderId,
         user: userId
@@ -37,9 +25,9 @@ const createPayment = async (req, res) => {
    
 
     // 2. Validate order
-    if (order.orderStatus === "cancelled") {
-        throw new AppError(400, "Order is cancelled");
-    }
+  if (["cancelled", "expired"].includes(order.orderStatus)) {
+    throw new AppError(400, "Order is no longer active");
+}
 
     if (order.paymentStatus === "paid") {
         throw new AppError(400, "Order is already paid");
@@ -70,17 +58,25 @@ const createPayment = async (req, res) => {
 
         // Already paid
         if (existingPayment.status === "paid") {
-            throw new AppError(
-                400,
-                "Payment is already completed"
+            return res.status(400).json(
+                new ApiResponse(
+                    200,
+                    "Payment is already completed"
+                )
             );
         }
 
-     
+        const  findAttempt = await PaymentAttempt.findOne({
+            payment: existingPayment._id,
+            order : orderId,
+            user : userId,
+           
+        }).sort({ createdAt: -1 });
+      
         // Existing payment is still valid
         if (
             existingPayment.status === "pending" &&
-            Date.now() < existingPayment.expiresAt.getTime() ) {
+            Date.now() < findAttempt.expiresAt.getTime() && findAttempt.providerOrderId ) {
            
             return res.status(200).json(
                 new ApiResponse(
@@ -90,9 +86,9 @@ const createPayment = async (req, res) => {
                         payment: existingPayment,
 
                         razorpayOrder: {
-                            id: existingPayment.providerOrderId,
-                            amount: existingPayment.amount * 100,
-                            currency: existingPayment.currency
+                            id: findAttempt.providerOrderId,
+                            amount: order.totalAmount * 100,
+                            currency: findAttempt.currency
                         },
 
                         keyId: process.env.RAZORPAY_KEY_ID
@@ -101,12 +97,7 @@ const createPayment = async (req, res) => {
             );
         }
 
-     // =================================================
-        // EXISTING PAYMENT EXPIRED
-         // =================================================
-          if(existingPayment.attemptsUsed >= 4)throw new AppError(400 , "Max Attempt Reached / Try Creating Order Again ")
-         
-      
+
         
          const razorpayOrder = await razorpay.orders.create({
 
@@ -118,24 +109,24 @@ const createPayment = async (req, res) => {
 
              receipt: order._id.toString()
          });
-            existingPayment.attemptsUsed +=1;
-         // Reuse SAME Payment document
-         existingPayment.providerOrderId =
-             razorpayOrder.id;
-
-         existingPayment.status = "pending";
-
-         existingPayment.expiresAt = new Date(
+           
+        const paymentAttempt = await PaymentAttempt.create({
+        order: orderId,
+        payment: existingPayment._id,
+        user: userId,
+        provider: "razorpay",
+        providerOrderId: razorpayOrder.id,
+        amountPaise : order.totalAmount * 100,
+        currency: "INR",
+        status: "created",
+        expiresAt: new Date(
             Math.min(
-             new Date(Date.now() + 15 * 60 * 1000).getTime(),
-             order.paymentDeadline.getTime()
-         ));
-
-         existingPayment.providerPaymentId = null;
-
-         await existingPayment.save();
-
-         
+                new Date(Date.now() + 15 * 60 * 1000).getTime(),
+                order.paymentDeadline.getTime()
+            )
+        )
+    });
+    
 
         return res.status(200).json(
             new ApiResponse(
@@ -172,7 +163,7 @@ const createPayment = async (req, res) => {
    
        
 
-        const attempt  = 1;
+   
     const payment = await Payment.create({
 
         order: orderId,
@@ -185,19 +176,37 @@ const createPayment = async (req, res) => {
 
         provider: "razorpay",
 
-        providerOrderId: razorpayOrder.id,
+       
 
         status: "pending",
 
+        
+
+       
+    });
+    const paymentAttempt = await PaymentAttempt.create({
+        order: orderId,
+        payment: payment._id,
+        user: userId,
+        provider: "razorpay",
+        providerOrderId: razorpayOrder.id,
+        amountPaise : order.totalAmount * 100,
+        currency: "INR",
+        status: "created",
         expiresAt: new Date(
             Math.min(
-             new Date(Date.now() + 15 * 60 * 1000).getTime(),
-             order.paymentDeadline.getTime()
-         )),
-
-        attemptsUsed : attempt
+                new Date(Date.now() + 15 * 60 * 1000).getTime(),
+                order.paymentDeadline.getTime()
+            )
+        )
     });
+    
 
+       
+       
+     
+      
+    
     return res.status(201).json(
         new ApiResponse(
             201,
@@ -219,9 +228,9 @@ const createPayment = async (req, res) => {
 
 
 const verifyPayment = async(req , res)=>{
-        const {orderId} = req.params;
+        // const {orderId} = req.params;
         const userId = req.userId;
-
+        const {orderId} = req.body;
         const {razorpay_payment_id,
         razorpay_order_id,
         razorpay_signature } = req.body;
@@ -261,7 +270,7 @@ const verifyPayment = async(req , res)=>{
         await payment.save({session});
         await order.save({session});
        await session.commitTransaction();
-        return res.status(200).json(new ApiResponce(200 , "Payment is Verified and Amount Paid Succesfully"  ,{payment , order}));
+        return res.status(200).json(new ApiResponse(200 , "Payment is Verified and Amount Paid Succesfully"  ,{payment , order}));
                 
             }catch(err){
                 await session.abortTransaction();
