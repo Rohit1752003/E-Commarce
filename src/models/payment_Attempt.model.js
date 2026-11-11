@@ -7,14 +7,12 @@ const paymentAttemptSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
       required: true,
-      index: true,
     },
 
     order: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
       required: true,
-      index: true,
     },
 
     user: {
@@ -30,22 +28,17 @@ const paymentAttemptSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Preserve the Razorpay order ID for this attempt.
     providerOrderId: {
       type: String,
       required: true,
-      unique: true,
     },
 
-    // A Razorpay payment ID identifies the actual payment.
     providerPaymentId: {
       type: String,
       default: null,
-      unique: true,
-      sparse: true,
+    
     },
 
-    // Store monetary values as integer paise.
     amountPaise: {
       type: Number,
       required: true,
@@ -58,20 +51,14 @@ const paymentAttemptSchema = new mongoose.Schema(
 
     currency: {
       type: String,
-      required: true,
       default: "INR",
+      required: true,
       enum: ["INR"],
     },
 
     status: {
       type: String,
-      enum: [
-        "created",
-        "pending",
-        "expired",
-        "failed",
-        "captured",
-      ],
+      enum: ["created", "pending", "expired", "failed", "captured"],
       default: "created",
       required: true,
     },
@@ -91,15 +78,9 @@ const paymentAttemptSchema = new mongoose.Schema(
       default: null,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-paymentAttemptSchema.index({
-  payment: 1,
-  createdAt: -1,
-});
 paymentAttemptSchema.index(
   { providerOrderId: 1 },
   { unique: true }
@@ -114,6 +95,8 @@ paymentAttemptSchema.index(
     },
   }
 );
+
+paymentAttemptSchema.index({ payment: 1, createdAt: -1 });
 const PaymentAttempt = mongoose.model(
   "PaymentAttempt",
   paymentAttemptSchema

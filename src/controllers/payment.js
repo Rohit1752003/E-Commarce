@@ -66,7 +66,7 @@ const createPayment = async (req, res) => {
             );
         }
 
-        const  findAttempt = await PaymentAttempt.findOne({
+        const  latestPayment = await PaymentAttempt.findOne({
             payment: existingPayment._id,
             order : orderId,
             user : userId,
@@ -76,7 +76,7 @@ const createPayment = async (req, res) => {
         // Existing payment is still valid
         if (
             existingPayment.status === "pending" &&
-            Date.now() < findAttempt.expiresAt.getTime() && findAttempt.providerOrderId ) {
+            Date.now() < latestPayment.expiresAt.getTime() && latestPayment.providerOrderId ) {
            
             return res.status(200).json(
                 new ApiResponse(
@@ -86,9 +86,9 @@ const createPayment = async (req, res) => {
                         payment: existingPayment,
 
                         razorpayOrder: {
-                            id: findAttempt.providerOrderId,
+                            id: latestPayment.providerOrderId,
                             amount: order.totalAmount * 100,
-                            currency: findAttempt.currency
+                            currency: latestPayment.currency
                         },
 
                         keyId: process.env.RAZORPAY_KEY_ID
@@ -96,6 +96,7 @@ const createPayment = async (req, res) => {
                 )
             );
         }
+       
 
 
         

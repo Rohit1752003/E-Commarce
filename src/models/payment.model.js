@@ -79,10 +79,17 @@ const paymentSchema = new mongoose.Schema(
       default: "not_required",
       required: true,
     },
-    PaymentAttempt:{
-    type : mongoose.Schema.Types.ObjectId,
-    ref : "PaymentAttempt",
-  },
+    
+    attemptCreationToken: {
+  type: String,
+  default: null,
+},
+
+attemptCreationLockUntil: {
+  type: Date,
+  default: null,
+},
+  
   },
   
   {
